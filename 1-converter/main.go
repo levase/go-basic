@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-const (
-	USDToEUR = 0.93
-	USDToRUB = 84.21
-)
-
 func main() {
 	var validCurrencies = []string{"USD", "EUR", "RUB"}
+	var exchangeRates = map[string]float64{
+		"USD": 1.0,
+		"EUR": 0.93,
+		"RUB": 84.21,
+	}
 
 	originalCurrency := getAndValidateCurrency(validCurrencies, "исходную")
 	remainingCurrencies := removeCurrency(validCurrencies, originalCurrency)
-	
+
 	if len(remainingCurrencies) == 0 {
 		fmt.Println("Нет доступных валют для обмена")
 		return
@@ -24,7 +24,7 @@ func main() {
 
 	desiredCurrency := getAndValidateCurrency(remainingCurrencies, "желаемую")
 	amount := getAndValidateAmount(originalCurrency)
-	result := calculateExchange(originalCurrency, desiredCurrency, amount)
+	result := calculateExchange(originalCurrency, desiredCurrency, amount, exchangeRates)
 
 	fmt.Printf("\nРезультат обмена: %.2f %s = %.2f %s\n", amount, originalCurrency, result, desiredCurrency)
 }
@@ -92,28 +92,15 @@ func getAndValidateAmount(currency string) float64 {
 	}
 }
 
-func calculateExchange(from, to string, amount float64) float64 {
-	var inUSD float64
+func calculateExchange(from, to string, amount float64, exchangeRates map[string]float64) float64 {
+	fromRate, fromExists := exchangeRates[from]
+	toRate, toExists := exchangeRates[to]
 
-	// Конвертируем все в USD как промежуточную валюту
-	switch from {
-	case "USD":
-		inUSD = amount
-	case "EUR":
-		inUSD = amount / USDToEUR
-	case "RUB":
-		inUSD = amount / USDToRUB
-	}
-
-	// Конвертируем из USD в целевую валюту
-	switch to {
-	case "USD":
-		return inUSD
-	case "EUR":
-		return inUSD * USDToEUR
-	case "RUB":
-		return inUSD * USDToRUB
-	default:
+	if !fromExists || !toExists {
 		return 0
 	}
+
+	// Конвертируем через USD как промежуточную валюту
+	amountInUSD := amount / fromRate
+	return amountInUSD * toRate
 }
