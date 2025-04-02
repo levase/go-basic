@@ -40,14 +40,17 @@ func getNumbers() []float64 {
 		scanner.Scan()
 
 		numbers, err := parseNumbers(scanner.Text())
-		if err == nil && len(numbers) > 0 {
-			return numbers
+		if err != nil {
+			fmt.Printf("Ошибка парсинга: %v\n", err)
+			continue
 		}
+
 		if len(numbers) == 0 {
 			fmt.Println("Ошибка: необходимо ввести хотя бы одно число")
-		} else {
-			fmt.Printf("Ошибка: %v\n", err)
+			continue
 		}
+
+		return numbers
 	}
 }
 
