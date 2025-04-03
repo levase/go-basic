@@ -7,78 +7,59 @@ import (
 	"time"
 )
 
+const (
+	MaxNameLength    = 100
+	NameRegexPattern = `^[a-zA-Z0-9](?:[a-zA-Z0-9 _-]*[a-zA-Z0-9])?$`
+)
+
+type BinList []*Bin
+
 type Bin struct {
-	id        string
-	private   bool
-	createdAt string
-	name      string
+	ID        string    `json:"id"`
+	Private   bool      `json:"private"`
+	CreatedAt time.Time `json:"createdAt"`
+	Name      string    `json:"name"`
 }
 
 func NewBin(id, name string, private bool) (*Bin, error) {
+	now := time.Now()
 	bin := &Bin{
-		id:        id,
-		private:   private,
-		createdAt: time.Now().Format(time.DateTime),
-		name:      name,
+		ID:        id,
+		Private:   private,
+		CreatedAt: now,
+		Name:      name,
 	}
 
 	if err := bin.validate(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid bin: %w", err)
 	}
 	return bin, nil
 }
 
 func (b *Bin) validate() error {
-	if err := b.validateID(); err != nil {
-		return err
-	}
-	if err := b.validateName(); err != nil {
-		return err
-	}
-	if err := b.validateCreatedAt(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *Bin) validateID() error {
-	if b.id == "" {
+	if b.ID == "" {
 		return errors.New("ID cannot be empty")
 	}
-	return nil
-}
 
-func (b *Bin) validateName() error {
-	if b.name == "" {
+	if b.Name == "" {
 		return errors.New("name cannot be empty")
 	}
 
-	if len(b.name) > 100 {
-		return errors.New("name is too long (max 100 characters)")
+	if len(b.Name) > MaxNameLength {
+		return fmt.Errorf("name is too long (max %d characters)", MaxNameLength)
 	}
 
-	validNameRegex := regexp.MustCompile(`^[a-zA-Z0-9 _-]+$`)
-	if !validNameRegex.MatchString(b.name) {
+	if !regexp.MustCompile(NameRegexPattern).MatchString(b.Name) {
 		return errors.New("name contains invalid characters")
 	}
-	return nil
-}
 
-func (b *Bin) validateCreatedAt() error {
-	if b.createdAt == "" {
-		return errors.New("createdAt cannot be empty")
-	}
-
-	_, err := time.Parse(time.DateTime, b.createdAt)
-	if err != nil {
-		return errors.New("createdAt has invalid format")
+	if b.CreatedAt.After(time.Now()) {
+		return errors.New("createdAt cannot be in the future")
 	}
 	return nil
 }
 
 func (b *Bin) String() string {
 	return fmt.Sprintf("{id:%s private:%v createdAt:%s name:%s}",
-		b.id, b.private, b.createdAt, b.name)
+		b.ID, b.Private, b.CreatedAt, b.Name)
 }
-
-type BinList []*Bin
