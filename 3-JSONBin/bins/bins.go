@@ -2,64 +2,70 @@ package bins
 
 import (
 	"errors"
-	"fmt"
-	"regexp"
 	"time"
 )
 
-const (
-	MaxNameLength    = 100
-	NameRegexPattern = `^[a-zA-Z0-9](?:[a-zA-Z0-9 _-]*[a-zA-Z0-9])?$`
+var (
+	ErrBinIDEmpty   = errors.New("bin ID cannot be empty")
+	ErrBinNameEmpty = errors.New("bin name cannot be empty")
+	ErrBinIDExists  = errors.New("bin with this ID already exists")
 )
 
-type BinList []*Bin
-
-type Bin struct {
-	ID        string    `json:"id"`
-	Private   bool      `json:"private"`
-	CreatedAt time.Time `json:"createdAt"`
-	Name      string    `json:"name"`
+type BinList struct {
+	Bins []*Bin `json:"bins"`
 }
 
-func NewBin(id, name string, private bool) (*Bin, error) {
-	now := time.Now()
-	bin := &Bin{
-		ID:        id,
-		Private:   private,
-		CreatedAt: now,
-		Name:      name,
+func NewBinList() *BinList {
+	return &BinList{
+		Bins: make([]*Bin, 0),
 	}
-
-	if err := bin.validate(); err != nil {
-		return nil, fmt.Errorf("invalid bin: %w", err)
-	}
-	return bin, nil
 }
 
-func (b *Bin) validate() error {
-	if b.ID == "" {
-		return errors.New("ID cannot be empty")
+func (bl *BinList) Add(bin *Bin) error {
+	if err := bin.Validate(); err != nil {
+		return err
 	}
 
-	if b.Name == "" {
-		return errors.New("name cannot be empty")
+	if bl.ContainsID(bin.ID) {
+		return ErrBinIDExists
 	}
 
-	if len(b.Name) > MaxNameLength {
-		return fmt.Errorf("name is too long (max %d characters)", MaxNameLength)
-	}
-
-	if !regexp.MustCompile(NameRegexPattern).MatchString(b.Name) {
-		return errors.New("name contains invalid characters")
-	}
-
-	if b.CreatedAt.After(time.Now()) {
-		return errors.New("createdAt cannot be in the future")
-	}
+	bl.Bins = append(bl.Bins, bin)
 	return nil
 }
 
-func (b *Bin) String() string {
-	return fmt.Sprintf("{id:%s private:%v createdAt:%s name:%s}",
-		b.ID, b.Private, b.CreatedAt, b.Name)
+func (bl *BinList) ContainsID(id string) bool {
+	for _, bin := range bl.Bins {
+		if bin.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+type Bin struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
+	Private   bool      `json:"private"`
+}
+
+func NewBin(id, name string, private bool) (*Bin, error) {
+	bin := &Bin{
+		ID:        id,
+		Name:      name,
+		CreatedAt: time.Now(),
+		Private:   private,
+	}
+	return bin, bin.Validate()
+}
+
+func (b *Bin) Validate() error {
+	if b.ID == "" {
+		return ErrBinIDEmpty
+	}
+	if b.Name == "" {
+		return ErrBinNameEmpty
+	}
+	return nil
 }

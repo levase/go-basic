@@ -1,50 +1,49 @@
 package main
 
 import (
+	"fmt"
 	"homework/JSONBin/bins"
 	"homework/JSONBin/file"
 	"homework/JSONBin/storage"
 	"log"
 )
 
-type Config struct {
-	StoragePath string
-	ImportPath  string
-}
-
 func main() {
-	cfg := Config{
-		StoragePath: "./output/data.json",
-		ImportPath:  "./output/somefile.json",
-	}
-
-	storage, err := storage.NewStorage(cfg.StoragePath)
+	fileStorage, err := file.NewFileStorage("./output/local_bin_storage.json")
 	if err != nil {
-		log.Fatalf("Failed to initialize storage: %v", err)
+		log.Fatalf("Failed to create file storage: %v", err)
 	}
 
-	binList, err := storage.ReadJSON()
+	jsonStorage := storage.NewStorage(fileStorage)
+
+	binList, err := jsonStorage.LoadBins()
 	if err != nil {
-		log.Fatalf("Failed to read bins: %v", err)
+		log.Printf("Failed to load bins: %v", err)
 	}
 
-	data, err := file.ReadFile(cfg.ImportPath)
-	if err != nil {
-		log.Println(err)
-	}
-
-	if len(data) > 0 {
-		binList = append(binList, data...)
-	}
-
-	// Test bin. Can be deleted
-	bin, err := bins.NewBin("5", "John", false)
+	// Тестовое создание и добавление нового bin
+	newBin, err := bins.NewBin("1", "Test bin", false)
 	if err != nil {
 		log.Fatalf("Failed to create bin: %v", err)
 	}
 
-	binList = append(binList, bin)
-	if err := storage.SaveJSON(&binList); err != nil {
-		log.Fatalf("Failed to save bins: %v", err)
+	if err := jsonStorage.AddBin(newBin); err != nil {
+		log.Fatalf("Failed to add bin: %v", err)
+	}
+
+	// Тестовое добавление второго bin
+	secondBin, err := bins.NewBin("2", "Test bin 2", true)
+	if err != nil {
+		log.Fatalf("Failed to create second bin: %v", err)
+	}
+
+	if err := jsonStorage.AddBin(secondBin); err != nil {
+		log.Fatalf("Failed to add second bin: %v", err)
+	}
+
+	fmt.Println("Current bins:")
+	for _, bin := range binList.Bins {
+		fmt.Printf("- %s (ID: %s, Created: %s, Private: %v)\n",
+			bin.Name, bin.ID, bin.CreatedAt.Format("2006-01-02 15:04:05"), bin.Private)
 	}
 }
