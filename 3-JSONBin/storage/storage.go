@@ -33,7 +33,6 @@ func (s *Storage) LoadBins() (*bins.BinList, error) {
 	if err := json.Unmarshal(data, &binList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal bins: %w", err)
 	}
-
 	return &binList, nil
 }
 

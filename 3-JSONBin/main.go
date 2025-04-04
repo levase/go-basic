@@ -16,6 +16,9 @@ func main() {
 
 	jsonStorage := storage.NewStorage(fileStorage)
 
+	// cloudStorage := cloud.NewCloudStorage("https://example.com")
+	// jsonStorage := storage.NewStorage(cloudStorage)
+
 	binList, err := jsonStorage.LoadBins()
 	if err != nil {
 		log.Printf("Failed to load bins: %v", err)
