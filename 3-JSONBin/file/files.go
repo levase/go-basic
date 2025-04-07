@@ -18,11 +18,15 @@ func ReadFile(path string) (bins.BinList, error) {
 	if !isJSONFile(path) {
 		return nil, fmt.Errorf("%w: '%s'", ErrNotJSONFile, path)
 	}
+       if _, err := os.Stat(path); err != nil {
+        if os.IsNotExist(err) {
+            return nil, fmt.Errorf("file '%s' does not exist: %w", path, err)
+        }
+        return nil, fmt.Errorf("failed to check file '%s': %w", path, err)
+    }
+
 
 	data, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("file '%s' is not exists: %w", path, err)
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
